@@ -161,10 +161,20 @@ const reducer = (state, action) => {
       }
 
       if (action.payload.operator === "%") {
-        return {
-          ...state,
-          currentValue: String(parseFloat(state.currentValue) / 100),
-        };
+        if (!state.prevValue && !state.operator) {
+          return {
+            ...state,
+            currentValue: String(parseFloat(state.currentValue) / 100),
+          };
+        }
+
+        if (state.prevValue && state.operator) {
+          return {
+            currentValue: String(parseFloat(state.prevValue) / 100),
+            prevValue: null,
+            operator: null,
+          };
+        }
       }
 
       if (state.prevValue == null) {
@@ -270,7 +280,7 @@ const Calculator = () => {
     setBtnValue("Saving...");
 
     if (!calculationName.trim()) {
-      setError("Pleae enter calculation name");
+      setError("Please enter calculation name");
       setBtnValue("Save");
       return;
     }
@@ -352,26 +362,27 @@ const Calculator = () => {
         </div>
 
         <div className="input-container">
-          <input
-            type="text"
-            className={`input calc-input ${error ? "border-red" : ""}`}
-            placeholder="Calculation Name"
-            value={calculationName}
-            onChange={(e) => {
-              setCalculationName(e.target.value);
-              setError("");
-            }}
-          />
-          <button
-            className={`submit-btn save ${
-              btnValue !== "Save" ? "disabled" : ""
-            }`}
-            disabled={btnValue !== "Save" ? true : false}
-            onClick={handleSave}
-          >
-            {btnValue}
-          </button>
-
+          <div>
+            <input
+              type="text"
+              className={`input calc-input ${error ? "border-red" : ""}`}
+              placeholder="Calculation Name"
+              value={calculationName}
+              onChange={(e) => {
+                setCalculationName(e.target.value);
+                setError("");
+              }}
+            />
+            <button
+              className={`submit-btn save ${
+                btnValue !== "Save" ? "disabled" : ""
+              }`}
+              disabled={btnValue !== "Save" ? true : false}
+              onClick={handleSave}
+            >
+              {btnValue}
+            </button>
+          </div>
           {error !== "" && <span className="input-error">{error}</span>}
         </div>
       </div>

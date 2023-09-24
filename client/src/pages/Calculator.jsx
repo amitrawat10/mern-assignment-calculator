@@ -83,7 +83,7 @@ const BUTTONS = [
 export const ACTIONS = {
   CLEAR: "clear",
   ADD_DIGIT: "add-digit",
-  CHOOSE_OPERATION: "choose-operation",
+  CHOOSE_OPERATION: "choose-operator",
   EVAL: "evaluate",
   UPDATE_STATE: "update-state",
 };
@@ -118,6 +118,12 @@ const evaluate = (state) => {
 const reducer = (state, action) => {
   switch (action.type) {
     case ACTIONS.ADD_DIGIT:
+      if (state.overwrite)
+        return {
+          ...state,
+          currentValue: action.payload.digit,
+          overwrite: false,
+        };
       if (action.payload.digit === "0" && state.currentValue === "0")
         return state;
 
@@ -140,7 +146,9 @@ const reducer = (state, action) => {
       };
 
     case ACTIONS.CHOOSE_OPERATION:
-      if (state.currentValue == null && state.prevValue == null) return state;
+      if (state.currentValue == null && state.prevValue == null) {
+        return state;
+      }
 
       if (action.payload.operator === "+/-") {
         return {
@@ -177,6 +185,13 @@ const reducer = (state, action) => {
         }
       }
 
+      if (state.currentValue == null) {
+        return {
+          ...state,
+          operator: action.payload.operator,
+        };
+      }
+
       if (state.prevValue == null) {
         return {
           ...state,
@@ -186,13 +201,7 @@ const reducer = (state, action) => {
         };
       }
 
-      if (state.currentValue == null) {
-        return {
-          ...state,
-          operator: action.payload.operator,
-        };
-      }
-
+      console.log(state);
       return {
         ...state,
         prevValue: evaluate(state),
@@ -211,10 +220,11 @@ const reducer = (state, action) => {
       )
         return state;
 
-      console.log(state.prevValue, `${state.operator}`, state.currentValue);
       return {
         ...state,
-        prevValue: state.prevValue + `${state.operator}` + state.currentValue,
+        prevValue: null,
+        prevValueTxt:
+          state.prevValue + `${state.operator}` + state.currentValue,
         currentValue: evaluate(state),
         overwrite: true,
         operator: null,
@@ -249,10 +259,8 @@ const Calculator = () => {
   const [history, setHistory] = useState([]);
   const [btnValue, setBtnValue] = useState("Save");
   const [calculationName, setCalculationName] = useState("");
-  const [{ currentValue, prevValue, operator }, dispatch] = useReducer(
-    reducer,
-    {}
-  );
+  const [{ currentValue, prevValue, operator, prevValueTxt }, dispatch] =
+    useReducer(reducer, {});
 
   const getHistory = async () => {
     try {
@@ -285,13 +293,13 @@ const Calculator = () => {
       return;
     }
 
-    if (currentValue && !prevValue) {
+    if (currentValue && !prevValueTxt) {
       setError("Calculation required two operands");
       setBtnValue("Save");
       return;
     }
 
-    if (!currentValue || !prevValue) {
+    if (!currentValue || !prevValueTxt) {
       setError("No calculation found");
       setBtnValue("Save");
       return;
@@ -307,7 +315,7 @@ const Calculator = () => {
           body: JSON.stringify({
             calculationName,
             result: currentValue,
-            calculation: prevValue,
+            calculation: prevValueTxt,
           }),
           credentials: "include",
         }
@@ -350,7 +358,8 @@ const Calculator = () => {
       <div className="calculator-container">
         <div className="screen">
           <span className="prev-calculation">
-            {prevValue} {operator}
+            {prevValueTxt && prevValue == null ? prevValueTxt : prevValue}{" "}
+            {operator}
           </span>
           <span>{formatNumber(currentValue)}</span>
         </div>

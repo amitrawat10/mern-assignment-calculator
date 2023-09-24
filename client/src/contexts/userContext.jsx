@@ -26,7 +26,6 @@ export default function UserProvider({ children }) {
         }
       } catch (error) {
         setLoading(false);
-        console.log(loading);
         console.log(error);
       }
     }
